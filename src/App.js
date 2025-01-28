@@ -26,6 +26,7 @@ import SummaryIconPNG from "./Images/SummaryIcon.png";
 import WIFIIcon from "./Images/WIFIIcon.png";
 import CautionIcon from "./Images/CautionIcon.png";
 import SwitchIconPNG from "./Images/SwitchIcon.png";
+import { Button } from "react-bootstrap";
 
 function App() {
   const RouterIcon = () => (
@@ -42,8 +43,8 @@ function App() {
         stroke-width="1"
         fill="none"
         fill-rule="evenodd"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       >
         <g
           id="router"
@@ -121,7 +122,7 @@ function App() {
         setLoading(false);
       }
     })();
-  }, [accounts.length === 0]);
+  }, []);
 
   async function GetAllMistSites({ token }) {
     const headers = new Headers();
@@ -240,6 +241,23 @@ function App() {
     setSiteId(id);
   };
 
+  const refresh = () => {
+    (async () => {
+      try {
+        setLoading(true);
+        // await async "fetchBooks()" function
+        GetDeviceSummary({
+          token: await instance.acquireTokenSilent(request).then((response) => {
+            return response.accessToken;
+          }),
+        });
+      } catch (err) {
+        console.log("Error occured ");
+        setLoading(false);
+      }
+    })();
+  };
+
   return (
     <NextUIProvider>
       <main className="dark text-foreground bg-background">
@@ -253,6 +271,33 @@ function App() {
             </div> */}
 
             <div className=" flex justify-end m-4">
+              <Button isIconOnly onClick={refresh} isDisabled={!siteId}>
+                {siteId ? (
+                  <svg
+                    fill="none"
+                    height="24"
+                    strokeWidth="1.5"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M21.8883 13.5C21.1645 18.3113 17.013 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C16.1006 2 19.6248 4.46819 21.1679 8"
+                      stroke="green"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M17 8H21.4C21.7314 8 22 7.73137 22 7.4V3"
+                      stroke="green"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                ) : (
+                  ""
+                )}
+              </Button>
               <div className="flex justify-center w-3/12 ">
                 <Autocomplete
                   defaultItems={SortSiteList}
