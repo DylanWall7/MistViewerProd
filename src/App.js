@@ -13,7 +13,7 @@ import { NextUIProvider } from "@nextui-org/react";
 import { Tabs, Tab } from "@nextui-org/react";
 import { AccessPoints } from "./components/AccessPoints";
 import { Routers } from "./components/Routers";
-
+import { ClaimDevices } from "./components/ClaimDevices";
 import { Switch48p } from "./components/Switch48p";
 import RouterLoadingModal from "./components/RouterLoadingModal";
 import SwitchLoadingModal from "./components/SwitchLoadingModal";
@@ -27,6 +27,8 @@ import WIFIIcon from "./Images/WIFIIcon.png";
 import CautionIcon from "./Images/CautionIcon.png";
 import SwitchIconPNG from "./Images/SwitchIcon.png";
 import { Button } from "react-bootstrap";
+
+import { Tooltip } from "@nextui-org/react";
 
 function App() {
   const RouterIcon = () => (
@@ -241,11 +243,10 @@ function App() {
     setSiteId(id);
   };
 
-  const refresh = () => {
+  const handleButtonClick = () => {
     (async () => {
       try {
         setLoading(true);
-        // await async "fetchBooks()" function
         GetDeviceSummary({
           token: await instance.acquireTokenSilent(request).then((response) => {
             return response.accessToken;
@@ -270,34 +271,52 @@ function App() {
               </p>
             </div> */}
 
-            <div className=" flex justify-end m-4">
-              <Button isIconOnly onClick={refresh} isDisabled={!siteId}>
-                {siteId ? (
-                  <svg
-                    fill="none"
-                    height="24"
-                    strokeWidth="1.5"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M21.8883 13.5C21.1645 18.3113 17.013 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C16.1006 2 19.6248 4.46819 21.1679 8"
-                      stroke="green"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M17 8H21.4C21.7314 8 22 7.73137 22 7.4V3"
-                      stroke="green"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                ) : (
-                  ""
-                )}
-              </Button>
+            <div className=" flex justify-end m-4 ">
+              <Tooltip
+                className="bg-black rounded-lg"
+                content={
+                  <div className="bg-black text-green-600 rounded-lg">
+                    <div className="text-small font-bold text-center">
+                      Refresh
+                    </div>
+                    <div className="text-tiny">
+                      1 minute interval to refresh data
+                    </div>
+                  </div>
+                }
+              >
+                <Button
+                  className="bg-inherit m-3"
+                  isIconOnly
+                  onClick={handleButtonClick}
+                >
+                  {siteId ? (
+                    <svg
+                      fill="none"
+                      height="24"
+                      strokeWidth="1.5"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M21.8883 13.5C21.1645 18.3113 17.013 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C16.1006 2 19.6248 4.46819 21.1679 8"
+                        stroke="green"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M17 8H21.4C21.7314 8 22 7.73137 22 7.4V3"
+                        stroke="green"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  ) : (
+                    ""
+                  )}
+                </Button>
+              </Tooltip>
               <div className="flex justify-center w-3/12 ">
                 <Autocomplete
                   defaultItems={SortSiteList}
@@ -402,6 +421,16 @@ function App() {
               >
                 <APLoadingModal loading={loading} />
                 <AccessPoints DeviceSummary={siteDeviceSummary} />
+              </Tab>
+              <Tab
+                key="claim-devices"
+                title={
+                  <div className="flex items-center space-x-2">
+                    <span>Claim Devices</span>
+                  </div>
+                }
+              >
+                <ClaimDevices />
               </Tab>
             </Tabs>
           </AuthenticatedTemplate>

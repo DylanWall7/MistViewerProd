@@ -17,11 +17,7 @@ import { Chip } from "@nextui-org/react";
 import CloudIcon from "../Images/CloudIcon.png";
 import { SRXPortUP } from "./PortTypes";
 import { SRXPortDown } from "./PortTypes";
-import { VcpPortUp } from "./PortTypes";
-import { FiberPortUp } from "./PortTypes";
-import { FiberPortDown } from "./PortTypes";
-import { CopperPortErr } from "./PortTypes";
-import { FiberPortErr } from "./PortTypes";
+
 import NetworkCable from "../Images/NetworkCable.png";
 
 const uptimetodhm = (uptime) => {
