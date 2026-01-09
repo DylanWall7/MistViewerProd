@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { PageLayout } from "./components/PageLayout";
 import {
   AuthenticatedTemplate,
@@ -105,79 +105,95 @@ function App() {
   const url1 = `https://${process.env.REACT_APP_API_BASEURL}/api/mist/site/${siteId}/devicesummary`;
 
   const { instance, accounts } = useMsal();
-  const request = {
-    ...GizmoRequest,
-    account: accounts[0],
-  };
+
+  const request = useMemo(
+    () => ({
+      ...GizmoRequest,
+      account: accounts[0],
+    }),
+    [accounts]
+  );
+
+  const GetAllMistSites = useCallback(
+    async ({ token }) => {
+      const headers = new Headers();
+      const bearer = `Bearer ${token}`;
+
+      headers.append("Authorization", bearer);
+      headers.append("Content-Type", "application/json");
+
+      const options = {
+        method: "GET",
+        headers: headers,
+      };
+
+      return fetch(url, options)
+        .then(async (response) => {
+          let text = await response.json();
+
+          setSiteList(text);
+          setIsLoading(false);
+        })
+
+        .catch((error) => {
+          console.error("Error:", error);
+          setIsLoading(false);
+        });
+    },
+    [url]
+  );
+
+  const GetDeviceSummary = useCallback(
+    async ({ token }) => {
+      const headers = new Headers();
+      const bearer = `Bearer ${token}`;
+
+      headers.append("Authorization", bearer);
+      headers.append("Content-Type", "application/json");
+
+      const options = {
+        method: "GET",
+        headers: headers,
+      };
+
+      return fetch(url1, options)
+        .then(async (response) => {
+          let text = await response.json();
+
+          JSON.stringify(text);
+          setSiteDeviceSummary(text);
+          setLoading(false);
+        })
+
+        .catch((error) => {
+          console.error("Error:", error);
+          setLoading(false);
+        });
+    },
+    [url1]
+  );
 
   useEffect(() => {
+    if (!accounts[0]) {
+      setIsLoading(false);
+      return;
+    }
+
     (async () => {
       setIsLoading(true);
       try {
-        GetAllMistSites({
+        await GetAllMistSites({
           token: await instance.acquireTokenSilent(request).then((response) => {
             return response.accessToken;
           }),
         });
       } catch (err) {
         console.log({ err });
-        setLoading(false);
+        setIsLoading(false);
       }
     })();
-  }, []);
+  }, [accounts, instance, request, GetAllMistSites]);
 
-  async function GetAllMistSites({ token }) {
-    const headers = new Headers();
-    const bearer = `Bearer ${token}`;
-
-    headers.append("Authorization", bearer);
-    headers.append("Content-Type", "application/json");
-
-    const options = {
-      method: "GET",
-      headers: headers,
-    };
-
-    return fetch(url, options)
-      .then(async (response) => {
-        let text = await response.json();
-
-        setSiteList(text);
-        setIsLoading(false);
-      })
-
-      .catch((error) => {
-        console.error("Error:", error);
-        setLoading(false);
-      });
-  }
-
-  async function GetDeviceSummary({ token }) {
-    const headers = new Headers();
-    const bearer = `Bearer ${token}`;
-
-    headers.append("Authorization", bearer);
-    headers.append("Content-Type", "application/json");
-
-    const options = {
-      method: "GET",
-      headers: headers,
-    };
-
-    return fetch(url1, options)
-      .then(async (response) => {
-        let text = await response.json();
-
-        JSON.stringify(text);
-        setSiteDeviceSummary(text);
-        setLoading(false);
-      })
-
-      .catch((error) => {
-        console.error("Error:", error);
-        setLoading(false);
-      });
-  }
   const SearchIcon = ({
     size = 24,
     strokeWidth = 1.5,
@@ -231,7 +247,7 @@ function App() {
         }
       })();
     }
-  }, [siteId]);
+  }, [siteId, instance, request, GetDeviceSummary]);
 
   const SortSiteList = siteList.sort((a, b) => {
     if (a.name < b.name) {
