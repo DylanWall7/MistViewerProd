@@ -27,6 +27,8 @@ import WIFIIcon from "./Images/WIFIIcon.png";
 import CautionIcon from "./Images/CautionIcon.png";
 import SwitchIconPNG from "./Images/SwitchIcon.png";
 import { Button } from "react-bootstrap";
+import { WiredDevices } from "./components/WiredDevices";
+import { WirelessDevices } from "./components/WirelessDevices";
 
 import { Tooltip } from "@nextui-org/react";
 
@@ -97,12 +99,17 @@ function App() {
 
   const [siteList, setSiteList] = useState([]);
   const [siteDeviceSummary, setSiteDeviceSummary] = useState([]);
+  const [wiredClients, setWiredClients] = useState([]);
+  const [wirelessClients, setWirelessClients] = useState([]);
   const [siteId, setSiteId] = useState();
   const [selectedKey, setSelectedKey] = useState();
   const [isLoading, setIsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [clientsLoading, setClientsLoading] = useState(false);
 
   const url1 = `https://${process.env.REACT_APP_API_BASEURL}/api/mist/site/${siteId}/devicesummary`;
+  const wiredClientsUrl = `https://${process.env.REACT_APP_API_BASEURL}/api/mist/site/${siteId}/wiredclientstats`;
+  const wirelessClientsUrl = `https://${process.env.REACT_APP_API_BASEURL}/api/mist/site/${siteId}/wirelessclientstats`;
 
   const { instance, accounts } = useMsal();
 
@@ -111,7 +118,7 @@ function App() {
       ...GizmoRequest,
       account: accounts[0],
     }),
-    [accounts]
+    [accounts],
   );
 
   const GetAllMistSites = useCallback(
@@ -140,7 +147,7 @@ function App() {
           setIsLoading(false);
         });
     },
-    [url]
+    [url],
   );
 
   const GetDeviceSummary = useCallback(
@@ -170,7 +177,57 @@ function App() {
           setLoading(false);
         });
     },
-    [url1]
+    [url1],
+  );
+
+  const GetWiredClients = useCallback(
+    async ({ token }) => {
+      const headers = new Headers();
+      const bearer = `Bearer ${token}`;
+
+      headers.append("Authorization", bearer);
+      headers.append("Content-Type", "application/json");
+
+      const options = {
+        method: "GET",
+        headers: headers,
+      };
+
+      return fetch(wiredClientsUrl, options)
+        .then(async (response) => {
+          let data = await response.json();
+          setWiredClients(data);
+        })
+        .catch((error) => {
+          console.error("Error fetching wired clients:", error);
+        });
+    },
+    [wiredClientsUrl],
+  );
+
+  const GetWirelessClients = useCallback(
+    async ({ token }) => {
+      const headers = new Headers();
+      const bearer = `Bearer ${token}`;
+
+      headers.append("Authorization", bearer);
+      headers.append("Content-Type", "application/json");
+
+      const options = {
+        method: "GET",
+        headers: headers,
+      };
+
+      return fetch(wirelessClientsUrl, options)
+        .then(async (response) => {
+          let data = await response.json();
+          setWirelessClients(data);
+        })
+        .catch((error) => {
+          console.error("Error fetching wireless clients:", error);
+        });
+    },
+    [wirelessClientsUrl],
   );
 
   useEffect(() => {
@@ -233,21 +290,26 @@ function App() {
       (async () => {
         try {
           setLoading(true);
-          // await async "fetchBooks()" function
-          GetDeviceSummary({
-            token: await instance
-              .acquireTokenSilent(request)
-              .then((response) => {
-                return response.accessToken;
-              }),
-          });
+          setClientsLoading(true);
+          const token = await instance
+            .acquireTokenSilent(request)
+            .then((response) => response.accessToken);
+
+          // Fetch all data in parallel
+          await Promise.all([
+            GetDeviceSummary({ token }),
+            GetWiredClients({ token }),
+            GetWirelessClients({ token }),
+          ]);
+          setClientsLoading(false);
         } catch (err) {
           console.log("Error occured ");
           setLoading(false);
+          setClientsLoading(false);
         }
       })();
     }
-  }, [siteId, instance, request, GetDeviceSummary]);
+  }, [siteId, instance, request, GetDeviceSummary, GetWiredClients, GetWirelessClients]);
 
   const SortSiteList = siteList.sort((a, b) => {
     if (a.name < b.name) {
@@ -263,14 +325,22 @@ function App() {
     (async () => {
       try {
         setLoading(true);
-        GetDeviceSummary({
-          token: await instance.acquireTokenSilent(request).then((response) => {
-            return response.accessToken;
-          }),
-        });
+        setClientsLoading(true);
+        const token = await instance
+          .acquireTokenSilent(request)
+          .then((response) => response.accessToken);
+
+        // Refresh all data in parallel
+        await Promise.all([
+          GetDeviceSummary({ token }),
+          GetWiredClients({ token }),
+          GetWirelessClients({ token }),
+        ]);
+        setClientsLoading(false);
       } catch (err) {
         console.log("Error occured ");
         setLoading(false);
+        setClientsLoading(false);
       }
     })();
   };
@@ -437,6 +507,26 @@ function App() {
               >
                 <APLoadingModal loading={loading} />
                 <AccessPoints DeviceSummary={siteDeviceSummary} />
+              </Tab>
+              <Tab
+                key="wiredDevices"
+                title={
+                  <div className="flex items-center space-x-2">
+                    <span>Wired Clients</span>
+                  </div>
+                }
+              >
+                <WiredDevices clients={wiredClients} loading={clientsLoading} siteId={siteId} />
+              </Tab>
+              <Tab
+                key="wirelessDevices"
+                title={
+                  <div className="flex items-center space-x-2">
+                    <span>Wireless Clients</span>
+                  </div>
+                }
+              >
+                <WirelessDevices clients={wirelessClients} loading={clientsLoading} siteId={siteId} />
               </Tab>
               <Tab
                 key="claim-devices"
